@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
+import type { Tables } from "@/integrations/supabase/types";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ const Profile = () => {
         .from("profiles")
         .select("display_name, bio, avatar_url")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
