@@ -48,7 +48,7 @@ const Profile = () => {
         .from("profiles")
         .select("display_name, bio, avatar_url")
         .eq("id", userId)
-        .maybeSingle();
+        .maybeSingle<Pick<Tables<"profiles">, "display_name" | "bio" | "avatar_url">>();
 
       if (error) throw error;
 
@@ -74,7 +74,7 @@ const Profile = () => {
         display_name: displayName,
         bio: bio,
         avatar_url: avatarUrl,
-      })
+      } as Tables<"profiles">)
       .eq("id", user.id);
 
     setLoading(false);
