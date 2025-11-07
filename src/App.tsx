@@ -10,6 +10,7 @@ import ServiceCategories from "./pages/ServiceCategories";
 import ServiceDetail from "./pages/ServiceDetail";
 import SearchResults from "./pages/SearchResults";
 import DeveloperDashboard from "./pages/developer/Dashboard";
+import ServiceUpload from "./pages/developer/ServiceUpload";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/service/:id" element={<ServiceDetail />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
+          <Route path="/developer/upload" element={<ServiceUpload />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

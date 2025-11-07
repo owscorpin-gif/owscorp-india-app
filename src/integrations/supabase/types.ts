@@ -44,6 +44,71 @@ export type Database = {
         }
         Relationships: []
       }
+      services: {
+        Row: {
+          app_file_url: string | null
+          category: string | null
+          created_at: string
+          demo_video_url: string | null
+          description: string
+          developer_id: string
+          features: string[] | null
+          id: string
+          platform: string
+          preview_images: string[] | null
+          price: number
+          pricing_tiers: Json | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          app_file_url?: string | null
+          category?: string | null
+          created_at?: string
+          demo_video_url?: string | null
+          description: string
+          developer_id: string
+          features?: string[] | null
+          id?: string
+          platform: string
+          preview_images?: string[] | null
+          price: number
+          pricing_tiers?: Json | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          app_file_url?: string | null
+          category?: string | null
+          created_at?: string
+          demo_video_url?: string | null
+          description?: string
+          developer_id?: string
+          features?: string[] | null
+          id?: string
+          platform?: string
+          preview_images?: string[] | null
+          price?: number
+          pricing_tiers?: Json | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
