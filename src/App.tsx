@@ -11,6 +11,7 @@ import ServiceDetail from "./pages/ServiceDetail";
 import SearchResults from "./pages/SearchResults";
 import DeveloperDashboard from "./pages/developer/Dashboard";
 import DeveloperUpload from "./pages/developer/Upload";
+import DeveloperServiceManagement from "./pages/developer/ServiceManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/search" element={<SearchResults />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
           <Route path="/developer/upload" element={<DeveloperUpload />} />
+          <Route path="/developer/services/:id" element={<DeveloperServiceManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
