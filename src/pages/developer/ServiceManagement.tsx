@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Upload, X, Plus, Loader2, Star, TrendingUp } from "lucide-react";
+import { serviceSchema, type ServiceFormData } from "@/lib/validation";
+import { ZodError } from "zod";
 
 const PLATFORMS = [
   "Website", "Android App", "iOS App", "Mac App", 
@@ -115,6 +117,20 @@ const ServiceManagement = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Validate form data using zod schema
+      const validationData: ServiceFormData = {
+        platform: platform as any,
+        title,
+        description,
+        category: category || undefined,
+        price: typeof price === 'string' ? parseFloat(price) : price,
+        features: features || [],
+        tags: tags || [],
+        status: status as any
+      };
+
+      const validated = serviceSchema.parse(validationData);
+
       // Upload new images
       const imageUrls = [...existingImages];
       for (let i = 0; i < newImages.length; i++) {
@@ -149,17 +165,17 @@ const ServiceManagement = () => {
       const { error } = await supabase
         .from('services')
         .update({
-          platform,
-          title,
-          description,
-          category: category || null,
-          price: parseFloat(price),
-          features,
-          tags,
+          platform: validated.platform,
+          title: validated.title,
+          description: validated.description,
+          category: validated.category || null,
+          price: validated.price,
+          features: validated.features,
+          tags: validated.tags,
           preview_images: imageUrls,
           demo_video_url: demoVideoUrl,
           app_file_url: appFileUrl,
-          status,
+          status: validated.status || status,
         })
         .eq('id', id);
 
@@ -175,11 +191,20 @@ const ServiceManagement = () => {
       setAppFile(null);
       fetchService();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error instanceof ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setSaving(false);
     }

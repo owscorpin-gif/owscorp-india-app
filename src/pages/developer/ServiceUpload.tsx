@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Plus, X, ArrowLeft, Loader2 } from "lucide-react";
+import { serviceSchema, type ServiceFormData } from "@/lib/validation";
+import { ZodError } from "zod";
 
 const PLATFORMS = [
   "Website",
@@ -111,6 +113,20 @@ const ServiceUpload = () => {
         return;
       }
 
+      // Validate form data using zod schema
+      const validationData: ServiceFormData = {
+        platform: platform as any,
+        title,
+        description,
+        category: category || undefined,
+        price: parseFloat(price),
+        features: features.filter(f => f.trim()),
+        tags: tags.filter(t => t.trim()),
+        status
+      };
+
+      const validated = serviceSchema.parse(validationData);
+
       // Upload preview images
       const imageUrls: string[] = [];
       for (let i = 0; i < previewImages.length; i++) {
@@ -142,20 +158,20 @@ const ServiceUpload = () => {
         );
       }
 
-      // Insert service into database
+      // Insert service with validated data
       const { error: insertError } = await supabase.from('services').insert({
         developer_id: userData.user.id,
-        platform,
-        title,
-        description,
-        category: category || null,
-        price: parseFloat(price),
-        features,
-        tags,
+        platform: validated.platform,
+        title: validated.title,
+        description: validated.description,
+        category: validated.category || null,
+        price: validated.price,
+        features: validated.features,
+        tags: validated.tags,
         preview_images: imageUrls,
         demo_video_url: demoVideoUrl,
         app_file_url: appFileUrl,
-        status,
+        status: validated.status || status,
       });
 
       if (insertError) throw insertError;
@@ -167,12 +183,20 @@ const ServiceUpload = () => {
 
       navigate('/developer/dashboard');
     } catch (error: any) {
-      console.error('Error uploading service:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload service. Please try again.",
-        variant: "destructive",
-      });
+      if (error instanceof ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Upload failed",
+          description: error.message || "Failed to upload service. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

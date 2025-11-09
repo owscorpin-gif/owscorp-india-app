@@ -5,11 +5,13 @@ import { User, Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const { isDeveloper } = useUserRole();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,15 +79,26 @@ export const Navbar = () => {
 
         <div className="flex items-center gap-3">
           {user ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/profile")}
-              className="gap-2"
-            >
-              <User className="h-4 w-4" />
-              Profile
-            </Button>
+            <>
+              {isDeveloper && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/developer/dashboard")}
+                >
+                  Developer
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/profile")}
+                className="gap-2"
+              >
+                <User className="h-4 w-4" />
+                Profile
+              </Button>
+            </>
           ) : (
             <>
               <Button

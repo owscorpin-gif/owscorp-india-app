@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Upload, TrendingUp, DollarSign, Eye, MessageSquare, Settings } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Mock data for developer services
 const mockServices = [
@@ -65,6 +66,21 @@ const mockInquiries = [
 const DeveloperDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const { isDeveloper, loading: roleLoading } = useUserRole();
+
+  useEffect(() => {
+    if (!roleLoading && !isDeveloper) {
+      navigate("/");
+    }
+  }, [isDeveloper, roleLoading, navigate]);
+
+  if (roleLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!isDeveloper) {
+    return null;
+  }
 
   const totalRevenue = mockServices.reduce((sum, service) => sum + service.revenue, 0);
   const totalSales = mockServices.reduce((sum, service) => sum + service.sales, 0);

@@ -22,7 +22,6 @@ export type Database = {
           display_name: string | null
           id: string
           updated_at: string
-          user_type: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
           avatar_url?: string | null
@@ -31,7 +30,6 @@ export type Database = {
           display_name?: string | null
           id: string
           updated_at?: string
-          user_type: Database["public"]["Enums"]["app_role"]
         }
         Update: {
           avatar_url?: string | null
@@ -40,9 +38,37 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
-          user_type?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
+      }
+      purchases: {
+        Row: {
+          customer_id: string
+          id: string
+          purchased_at: string | null
+          service_id: string
+        }
+        Insert: {
+          customer_id: string
+          id?: string
+          purchased_at?: string | null
+          service_id: string
+        }
+        Update: {
+          customer_id?: string
+          id?: string
+          purchased_at?: string | null
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
@@ -109,12 +135,39 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "customer" | "developer"
