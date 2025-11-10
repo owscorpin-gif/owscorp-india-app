@@ -13,6 +13,7 @@ import DeveloperDashboard from "./pages/developer/Dashboard";
 import DeveloperUpload from "./pages/developer/Upload";
 import DeveloperServiceManagement from "./pages/developer/ServiceManagement";
 import Checkout from "./pages/Checkout";
+import CustomerDashboard from "./pages/CustomerDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/service/:id" element={<ServiceDetail />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/checkout/:serviceId" element={<Checkout />} />
+          <Route path="/dashboard" element={<CustomerDashboard />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
           <Route path="/developer/upload" element={<DeveloperUpload />} />
           <Route path="/developer/services/:id" element={<DeveloperServiceManagement />} />
