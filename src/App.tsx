@@ -15,6 +15,7 @@ import DeveloperServiceManagement from "./pages/developer/ServiceManagement";
 import Checkout from "./pages/Checkout";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import Messages from "./pages/Messages";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/checkout/:serviceId" element={<Checkout />} />
           <Route path="/dashboard" element={<CustomerDashboard />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
           <Route path="/developer/upload" element={<DeveloperUpload />} />
           <Route path="/developer/services/:id" element={<DeveloperServiceManagement />} />
