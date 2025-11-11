@@ -17,6 +17,7 @@ import CustomerDashboard from "./pages/CustomerDashboard";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Support from "./pages/Support";
+import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/feedback/:serviceId" element={<Feedback />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
           <Route path="/developer/upload" element={<DeveloperUpload />} />
           <Route path="/developer/services/:id" element={<DeveloperServiceManagement />} />
