@@ -119,26 +119,48 @@ const Feedback = () => {
         is_anonymous: data.is_anonymous,
       };
 
-      let error;
+      let reviewId: string | null = null;
 
       if (existingReview) {
         // Update existing review
-        const result = await supabase
+        const { data: updatedData, error: updateError } = await supabase
           .from("reviews")
           .update(reviewData)
-          .eq("id", existingReview.id);
+          .eq("id", existingReview.id)
+          .select()
+          .single();
         
-        error = result.error;
+        if (updateError) throw updateError;
+        reviewId = existingReview.id;
       } else {
         // Create new review
-        const result = await supabase
+        const { data: newData, error: insertError } = await supabase
           .from("reviews")
-          .insert(reviewData);
+          .insert(reviewData)
+          .select()
+          .single();
         
-        error = result.error;
+        if (insertError) throw insertError;
+        reviewId = newData?.id || null;
       }
 
-      if (error) throw error;
+      // Call edge function to handle notification routing
+      if (reviewId) {
+        try {
+          const { error: notificationError } = await supabase.functions.invoke(
+            'handle-review-notification',
+            {
+              body: { reviewId },
+            }
+          );
+
+          if (notificationError) {
+            console.error('Notification error:', notificationError);
+          }
+        } catch (notifError) {
+          console.error('Failed to send notification:', notifError);
+        }
+      }
 
       setIsSuccess(true);
       toast.success(existingReview ? "Review updated successfully!" : "Thank you for your feedback!");
