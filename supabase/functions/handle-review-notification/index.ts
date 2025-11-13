@@ -10,6 +10,8 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL');
 
+const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -23,11 +25,9 @@ serve(async (req) => {
       throw new Error('Review ID is required');
     }
 
-    // Create Supabase client with service role key to access all data
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch review details with service and customer information
-    const { data: review, error: reviewError } = await supabase
+    const { data: review, error: reviewError } = await supabaseClient
       .from('reviews')
       .select(`
         *,
@@ -122,7 +122,55 @@ serve(async (req) => {
         throw new Error('Failed to send notification to Slack');
       }
 
-      console.log('Complaint notification sent to Slack successfully');
+      console.log('Notification sent to Slack successfully');
+
+      // Send email notification to developer
+      try {
+        const isComplaint = review.is_complaint;
+        // Get developer's email from auth.users
+        const { data: developerAuth, error: authError } = await supabaseClient.auth.admin.getUserById(review.services.developer_id);
+        
+        if (!authError && developerAuth?.user?.email) {
+          const customerName = review.is_anonymous 
+            ? 'Anonymous Customer' 
+            : (review.profiles?.display_name || 'Unknown Customer');
+          
+          const emailSubject = `New ${isComplaint ? 'Complaint' : 'Review'} for ${review.services.title}`;
+          const emailHtml = `
+            <h2>${isComplaint ? '⚠️ Customer Complaint' : '⭐ New Review'}</h2>
+            <p><strong>Service:</strong> ${review.services.title}</p>
+            <p><strong>Rating:</strong> ${review.rating}/5 stars</p>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Review:</strong> ${review.review_text || 'No review text provided'}</p>
+            <p><strong>Date:</strong> ${new Date(review.created_at).toLocaleString()}</p>
+          `;
+
+          const emailResponse = await fetch(
+            `${supabaseUrl}/functions/v1/send-review-email`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                to: developerAuth.user.email,
+                subject: emailSubject,
+                html: emailHtml,
+                isComplaint: isComplaint,
+              }),
+            }
+          );
+
+          if (!emailResponse.ok) {
+            console.error('Error sending email:', await emailResponse.text());
+          } else {
+            console.log('Email notification sent successfully');
+          }
+        }
+      } catch (emailError) {
+        console.error('Error in email notification:', emailError);
+      }
     }
 
     // Return success response

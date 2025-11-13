@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BottomNavigation } from "@/components/navigation/BottomNavigation";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -10,6 +11,7 @@ import ServiceCategories from "./pages/ServiceCategories";
 import ServiceDetail from "./pages/ServiceDetail";
 import SearchResults from "./pages/SearchResults";
 import DeveloperDashboard from "./pages/developer/Dashboard";
+import DeveloperComplaints from "./pages/developer/Complaints";
 import DeveloperUpload from "./pages/developer/Upload";
 import DeveloperServiceManagement from "./pages/developer/ServiceManagement";
 import Checkout from "./pages/Checkout";
@@ -25,8 +27,6 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -42,11 +42,15 @@ const App = () => (
           <Route path="/support" element={<Support />} />
           <Route path="/feedback/:serviceId" element={<Feedback />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
+          <Route path="/developer/complaints" element={<DeveloperComplaints />} />
           <Route path="/developer/upload" element={<DeveloperUpload />} />
           <Route path="/developer/services/:id" element={<DeveloperServiceManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <BottomNavigation />
+        <Toaster />
+        <Sonner />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

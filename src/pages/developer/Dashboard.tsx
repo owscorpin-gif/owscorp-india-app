@@ -1,305 +1,208 @@
-import { useState, useEffect } from "react";
-import { Helmet } from "react-helmet";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Upload, TrendingUp, DollarSign, Eye, MessageSquare, Settings } from "lucide-react";
-import { useUserRole } from "@/hooks/useUserRole";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Upload, Edit, Trash2, DollarSign, Package, Star, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for developer services
-const mockServices = [
-  {
-    id: "1",
-    title: "E-Commerce Dashboard",
-    platform: "Website",
-    price: 299,
-    sales: 45,
-    revenue: 13455,
-    status: "active",
-    rating: 4.8,
-  },
-  {
-    id: "2",
-    title: "Fitness Tracker Pro",
-    platform: "iOS",
-    price: 49,
-    sales: 120,
-    revenue: 5880,
-    status: "active",
-    rating: 4.6,
-  },
-  {
-    id: "3",
-    title: "Task Manager AI",
-    platform: "Android",
-    price: 39,
-    sales: 85,
-    revenue: 3315,
-    status: "active",
-    rating: 4.9,
-  },
-];
-
-// Mock data for customer inquiries
-const mockInquiries = [
-  {
-    id: "1",
-    customer: "John Doe",
-    service: "E-Commerce Dashboard",
-    message: "Does this include mobile responsiveness?",
-    date: "2024-11-05",
-    status: "pending",
-  },
-  {
-    id: "2",
-    customer: "Sarah Smith",
-    service: "Fitness Tracker Pro",
-    message: "Can I get a custom integration?",
-    date: "2024-11-04",
-    status: "responded",
-  },
-];
-
-const DeveloperDashboard = () => {
+export default function DeveloperDashboard() {
+  const [services, setServices] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalServices: 0,
+    totalRevenue: 0,
+    avgRating: 0,
+    totalComplaints: 0,
+  });
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
-  const { isDeveloper, loading: roleLoading } = useUserRole();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (!roleLoading && !isDeveloper) {
-      navigate("/");
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: services, error: servicesError } = await supabase
+        .from("services")
+        .select("*")
+        .eq("developer_id", user.id);
+
+      if (servicesError) throw servicesError;
+      setServices(services || []);
+
+      const serviceIds = services?.map(s => s.id) || [];
+      
+      const purchases = await supabase
+        .from("purchases")
+        .select("service_id")
+        .in("service_id", serviceIds);
+
+      const totalRevenue = purchases.data?.reduce((sum: number, p: any) => {
+        const service = services?.find((s: any) => s.id === p.service_id);
+        return sum + (service?.price || 0);
+      }, 0) || 0;
+
+      const reviews = await supabase
+        .from("reviews")
+        .select("rating, service_id, is_complaint")
+        .in("service_id", serviceIds);
+
+      const avgRating = reviews.data && reviews.data.length > 0
+        ? reviews.data.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.data.length
+        : 0;
+
+      const totalComplaints = reviews.data?.filter((r: any) => r.is_complaint === true).length || 0;
+
+      setStats({
+        totalServices: services?.length || 0,
+        totalRevenue,
+        avgRating: Number(avgRating.toFixed(1)),
+        totalComplaints,
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [isDeveloper, roleLoading, navigate]);
+  };
 
-  if (roleLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  const deleteService = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("services")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Service deleted successfully",
+      });
+      
+      fetchDashboardData();
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete service",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return <div className="container mx-auto p-6">Loading...</div>;
   }
-
-  if (!isDeveloper) {
-    return null;
-  }
-
-  const totalRevenue = mockServices.reduce((sum, service) => sum + service.revenue, 0);
-  const totalSales = mockServices.reduce((sum, service) => sum + service.sales, 0);
-  const activeServices = mockServices.filter(s => s.status === "active").length;
 
   return (
-    <>
-      <Helmet>
-        <title>Developer Dashboard - OWSCORP</title>
-        <meta name="description" content="Manage your services, track sales, and grow your revenue on OWSCORP marketplace" />
-      </Helmet>
-
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="border-b bg-card">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground">Developer Dashboard</h1>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate("/profile")}>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-              <Button onClick={() => navigate("/developer/upload")}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Service
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <main className="container mx-auto px-4 py-8">
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-3 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-accent">+12.5%</span> from last month
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalSales}</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-accent">+8.2%</span> from last month
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Services</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{activeServices}</div>
-                <p className="text-xs text-muted-foreground">
-                  {mockServices.length} total services
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="services">My Services</TabsTrigger>
-              <TabsTrigger value="inquiries">
-                Customer Inquiries
-                {mockInquiries.filter(i => i.status === "pending").length > 0 && (
-                  <Badge variant="destructive" className="ml-2">
-                    {mockInquiries.filter(i => i.status === "pending").length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your latest sales and service performance</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Platform</TableHead>
-                        <TableHead>Sales</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead className="text-right">Revenue</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockServices.map((service) => (
-                        <TableRow key={service.id}>
-                          <TableCell className="font-medium">{service.title}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{service.platform}</Badge>
-                          </TableCell>
-                          <TableCell>{service.sales}</TableCell>
-                          <TableCell>⭐ {service.rating}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            ${service.revenue.toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="services" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Service Listings</CardTitle>
-                  <CardDescription>Manage your published services</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Platform</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockServices.map((service) => (
-                        <TableRow key={service.id}>
-                          <TableCell className="font-medium">{service.title}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{service.platform}</Badge>
-                          </TableCell>
-                          <TableCell>${service.price}</TableCell>
-                          <TableCell>
-                            <Badge variant={service.status === "active" ? "default" : "secondary"}>
-                              {service.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/developer/services/${service.id}`)}
-                            >
-                              Manage
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="inquiries" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Inquiries</CardTitle>
-                  <CardDescription>Respond to customer questions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Message</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockInquiries.map((inquiry) => (
-                        <TableRow key={inquiry.id}>
-                          <TableCell className="font-medium">{inquiry.customer}</TableCell>
-                          <TableCell>{inquiry.service}</TableCell>
-                          <TableCell className="max-w-xs truncate">{inquiry.message}</TableCell>
-                          <TableCell>{inquiry.date}</TableCell>
-                          <TableCell>
-                            <Badge variant={inquiry.status === "pending" ? "destructive" : "default"}>
-                              {inquiry.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <MessageSquare className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </main>
+    <div className="container mx-auto p-6 mb-20 md:mb-0">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Developer Dashboard</h1>
+        <Button onClick={() => navigate("/developer/upload")}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Service
+        </Button>
       </div>
-    </>
-  );
-};
 
-export default DeveloperDashboard;
+      <div className="grid gap-4 md:grid-cols-4 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Services</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalServices}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avgRating}</div>
+            <p className="text-xs text-muted-foreground">Out of 5 stars</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:border-primary transition-colors"
+          onClick={() => navigate("/developer/complaints")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Complaints</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalComplaints}</div>
+            <p className="text-xs text-muted-foreground">Click to view details</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Services</CardTitle>
+          <CardDescription>Manage your listed services</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {services.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No services yet. Upload your first service to get started!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {services.map((service) => (
+                <div key={service.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                  <div>
+                    <h3 className="font-semibold">{service.title}</h3>
+                    <p className="text-sm text-muted-foreground">{service.platform}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold">${service.price}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/developer/services/${service.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteService(service.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
