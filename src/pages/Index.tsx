@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedServices } from "@/components/home/FeaturedServices";
 import { Testimonials } from "@/components/home/Testimonials";
+import { Footer } from "@/components/home/Footer";
 
 const Index = () => {
   return (
@@ -24,6 +25,7 @@ const Index = () => {
           <FeaturedServices />
           <Testimonials />
         </main>
+        <Footer />
       </div>
     </>
   );

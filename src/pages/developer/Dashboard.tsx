@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
+import { Navbar } from "@/components/home/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -106,7 +108,15 @@ export default function DeveloperDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 mb-20 md:mb-0">
+    <>
+      <Helmet>
+        <title>Developer Dashboard - OWSCORP</title>
+        <meta name="description" content="Manage your services and track your sales" />
+      </Helmet>
+      
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto p-6 mb-20 md:mb-0">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Developer Dashboard</h1>
         <Button onClick={() => navigate("/developer/upload")}>
@@ -204,5 +214,7 @@ export default function DeveloperDashboard() {
         </CardContent>
       </Card>
     </div>
+    </div>
+    </>
   );
 }
