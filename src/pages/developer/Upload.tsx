@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
+import { Navbar } from "@/components/home/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,14 +41,14 @@ const ServiceUpload = () => {
   const [status, setStatus] = useState("draft");
 
   const platforms = [
-    "Website",
-    "Android App",
-    "iOS App",
-    "Mac App",
-    "Windows App",
-    "Linux App",
-    "AI Service",
-    "Automation Tool"
+    { value: "website", label: "Website" },
+    { value: "android", label: "Android App" },
+    { value: "ios", label: "iOS App" },
+    { value: "mac", label: "Mac App" },
+    { value: "windows", label: "Windows App" },
+    { value: "linux", label: "Linux App" },
+    { value: "ai", label: "AI Service" },
+    { value: "cloud", label: "Automation Tool" }
   ];
 
   const categories = [
@@ -198,6 +199,7 @@ const ServiceUpload = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background">
+        <Navbar />
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Upload New Service</h1>
@@ -236,7 +238,7 @@ const ServiceUpload = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {platforms.map((p) => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

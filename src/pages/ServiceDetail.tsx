@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
+import { Navbar } from "@/components/home/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShoppingCart, MessageCircle, Download, ExternalLink, Star } from "lucide-react";
+import { Loader2, ShoppingCart, Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function ServiceDetail() {
@@ -93,22 +95,39 @@ export default function ServiceDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </>
     );
   }
 
   if (!service) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Service not found</p>
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-xl font-semibold mb-2">Service not found</p>
+            <Button onClick={() => navigate("/")}>Return to Home</Button>
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl mb-20 md:mb-0">
+    <>
+      <Helmet>
+        <title>{service.title} - OWSCORP</title>
+        <meta name="description" content={service.description} />
+      </Helmet>
+      
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto p-6 max-w-6xl mb-20 md:mb-0">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -175,5 +194,7 @@ export default function ServiceDetail() {
         </div>
       </div>
     </div>
+    </div>
+    </>
   );
 }
