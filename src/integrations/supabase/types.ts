@@ -113,21 +113,33 @@ export type Database = {
       }
       purchases: {
         Row: {
+          amount: number | null
           customer_id: string
           id: string
+          payment_status: string | null
           purchased_at: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
           service_id: string
         }
         Insert: {
+          amount?: number | null
           customer_id: string
           id?: string
+          payment_status?: string | null
           purchased_at?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           service_id: string
         }
         Update: {
+          amount?: number | null
           customer_id?: string
           id?: string
+          payment_status?: string | null
           purchased_at?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           service_id?: string
         }
         Relationships: [

@@ -107,31 +107,92 @@ const Checkout = () => {
 
     setLoading(true);
     try {
-      // Create purchase record
-      const { error } = await supabase
-        .from("purchases")
-        .insert({
-          customer_id: user.id,
-          service_id: service.id,
-        });
+      // Create Razorpay order
+      const { data: orderData, error: orderError } = await supabase.functions.invoke(
+        'create-razorpay-order',
+        {
+          body: {
+            serviceId: service.id,
+            amount: service.price,
+            currency: 'INR',
+          },
+        }
+      );
 
-      if (error) throw error;
+      if (orderError) throw orderError;
 
-      toast({
-        title: "Purchase Successful!",
-        description: "Your service is now available in your dashboard",
-      });
+      // Initialize Razorpay checkout
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'OWSCORP',
+        description: service.title,
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          try {
+            // Verify payment on server
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+              'verify-razorpay-payment',
+              {
+                body: {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  serviceId: service.id,
+                  customerId: user.id,
+                  amount: service.price,
+                },
+              }
+            );
 
-      // Redirect to customer dashboard
-      navigate("/dashboard");
+            if (verifyError) throw verifyError;
+
+            toast({
+              title: "Payment Successful!",
+              description: "Your service is now available in your dashboard",
+            });
+
+            navigate("/dashboard");
+          } catch (error: any) {
+            console.error("Payment verification error:", error);
+            toast({
+              title: "Payment Verification Failed",
+              description: error.message || "Please contact support",
+              variant: "destructive",
+            });
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: billingInfo.fullName,
+          email: billingInfo.email,
+        },
+        theme: {
+          color: '#1E3A8A',
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment process",
+              variant: "destructive",
+            });
+          }
+        }
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
     } catch (error: any) {
-      console.error("Purchase error:", error);
+      console.error("Payment error:", error);
       toast({
-        title: "Purchase Failed",
+        title: "Payment Failed",
         description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
