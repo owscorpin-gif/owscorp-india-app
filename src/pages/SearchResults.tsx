@@ -2,12 +2,17 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Navbar } from "@/components/home/Navbar";
+import { Footer } from "@/components/home/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Search, Loader2, Filter, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface Service {
   id: string;
@@ -26,6 +31,10 @@ const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const query = searchParams.get("q");
@@ -55,16 +64,42 @@ const SearchResults = () => {
     fetchServices();
   }, []);
 
-  // Filter services based on search query
-  const filteredServices = services.filter(service => {
-    const query = searchQuery.toLowerCase();
-    return (
-      service.title.toLowerCase().includes(query) ||
-      service.description.toLowerCase().includes(query) ||
-      service.platform.toLowerCase().includes(query) ||
-      (service.category && service.category.toLowerCase().includes(query))
-    );
-  });
+  // Filter and sort services
+  const filteredServices = services
+    .filter(service => {
+      const query = searchQuery.toLowerCase();
+      const matchesQuery = !query || (
+        service.title.toLowerCase().includes(query) ||
+        service.description.toLowerCase().includes(query) ||
+        service.platform.toLowerCase().includes(query) ||
+        (service.category && service.category.toLowerCase().includes(query))
+      );
+      const matchesPlatform = selectedPlatform === "all" || service.platform === selectedPlatform;
+      const matchesPrice = service.price >= priceRange[0] && service.price <= priceRange[1];
+      
+      return matchesQuery && matchesPlatform && matchesPrice;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "name":
+          return a.title.localeCompare(b.title);
+        case "newest":
+        default:
+          return 0;
+      }
+    });
+
+  const platforms = ["all", ...Array.from(new Set(services.map(s => s.platform)))];
+
+  const clearFilters = () => {
+    setPriceRange([0, 10000]);
+    setSelectedPlatform("all");
+    setSortBy("newest");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,10 +140,80 @@ const SearchResults = () => {
               />
             </form>
 
-            <p className="text-muted-foreground">
-              {filteredServices.length} result{filteredServices.length !== 1 ? "s" : ""} found
-              {searchQuery && ` for "${searchQuery}"`}
-            </p>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+              <p className="text-muted-foreground">
+                {filteredServices.length} result{filteredServices.length !== 1 ? "s" : ""} found
+                {searchQuery && ` for "${searchQuery}"`}
+              </p>
+              
+              <div className="flex gap-2 items-center w-full sm:w-auto">
+                <Sheet open={showFilters} onOpenChange={setShowFilters}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      Filters
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Filter Services</SheetTitle>
+                      <SheetDescription>
+                        Refine your search with advanced filters
+                      </SheetDescription>
+                    </SheetHeader>
+                    
+                    <div className="space-y-6 mt-6">
+                      <div className="space-y-2">
+                        <Label>Platform</Label>
+                        <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="All platforms" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {platforms.map(platform => (
+                              <SelectItem key={platform} value={platform}>
+                                {platform === "all" ? "All Platforms" : platform}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Price Range: ${priceRange[0]} - ${priceRange[1]}</Label>
+                        <Slider
+                          value={priceRange}
+                          onValueChange={(value) => setPriceRange(value as [number, number])}
+                          max={10000}
+                          step={100}
+                          className="mt-2"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Sort By</Label>
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="newest">Newest First</SelectItem>
+                            <SelectItem value="price-low">Price: Low to High</SelectItem>
+                            <SelectItem value="price-high">Price: High to Low</SelectItem>
+                            <SelectItem value="name">Name: A to Z</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button onClick={clearFilters} variant="outline" className="w-full gap-2">
+                        <X className="h-4 w-4" />
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -163,6 +268,8 @@ const SearchResults = () => {
             </div>
           )}
         </main>
+        
+        <Footer />
       </div>
     </>
   );
