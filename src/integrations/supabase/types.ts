@@ -49,6 +49,65 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          customer_id: string
+          due_date: string | null
+          id: string
+          invoice_date: string | null
+          invoice_number: string
+          invoice_url: string | null
+          purchase_id: string
+          service_id: string
+          status: string | null
+          tax_amount: number | null
+          total_amount: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          customer_id: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number: string
+          invoice_url?: string | null
+          purchase_id: string
+          service_id: string
+          status?: string | null
+          tax_amount?: number | null
+          total_amount: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          customer_id?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string
+          invoice_url?: string | null
+          purchase_id?: string
+          service_id?: string
+          status?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -114,6 +173,7 @@ export type Database = {
       purchases: {
         Row: {
           amount: number | null
+          currency: string | null
           customer_id: string
           id: string
           payment_status: string | null
@@ -124,6 +184,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          currency?: string | null
           customer_id: string
           id?: string
           payment_status?: string | null
@@ -134,6 +195,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          currency?: string | null
           customer_id?: string
           id?: string
           payment_status?: string | null
@@ -148,6 +210,50 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          processed_at: string | null
+          purchase_id: string
+          razorpay_refund_id: string | null
+          reason: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          processed_at?: string | null
+          purchase_id: string
+          razorpay_refund_id?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          processed_at?: string | null
+          purchase_id?: string
+          razorpay_refund_id?: string | null
+          reason?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -282,11 +388,39 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed: boolean | null
+          razorpay_event_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          processed?: boolean | null
+          razorpay_event_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed?: boolean | null
+          razorpay_event_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
