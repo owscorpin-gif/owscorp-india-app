@@ -114,7 +114,8 @@ const Checkout = () => {
           body: {
             serviceId: service.id,
             amount: service.price,
-            currency: 'INR',
+            currency: service.currency || 'INR', // Support multi-currency
+            customerId: user.id,
           },
         }
       );
@@ -142,6 +143,7 @@ const Checkout = () => {
                   serviceId: service.id,
                   customerId: user.id,
                   amount: service.price,
+                  currency: service.currency || 'INR',
                 },
               }
             );

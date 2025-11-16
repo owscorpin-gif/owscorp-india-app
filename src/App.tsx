@@ -20,6 +20,7 @@ import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Support from "./pages/Support";
 import Feedback from "./pages/Feedback";
+import PaymentHistory from "./pages/PaymentHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/chat" element={<Chat />} />
           <Route path="/support" element={<Support />} />
           <Route path="/feedback/:serviceId" element={<Feedback />} />
+          <Route path="/payment-history" element={<PaymentHistory />} />
           <Route path="/developer/dashboard" element={<DeveloperDashboard />} />
           <Route path="/developer/complaints" element={<DeveloperComplaints />} />
           <Route path="/developer/upload" element={<DeveloperUpload />} />

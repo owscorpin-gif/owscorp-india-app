@@ -29,7 +29,8 @@ serve(async (req) => {
       razorpay_signature,
       serviceId,
       customerId,
-      amount
+      amount,
+      currency = 'INR'
     } = await req.json();
 
     // Verify signature
@@ -58,6 +59,7 @@ serve(async (req) => {
         razorpay_payment_id,
         payment_status: 'success',
         amount,
+        currency,
       })
       .select()
       .single();
